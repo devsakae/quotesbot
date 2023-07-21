@@ -68,9 +68,9 @@ async function commands(client, message, collection) {
 
     // Adiciona uma quote nova na coleção do grupo
     case '!addquote':
-      // Adiciona mais 1 na conta da coleção config
-      await db.collection('config_database').updateOne({}, { $inc: { [collection]: 1 } })
       const knife = content.indexOf(':');
+      if (knife === -1 || content.substring(0, knife).indexOf(',') === -1) return client.sendText(message.from, 'Aprende a adicionar quote seu burro 🙈');
+      // Adiciona mais 1 na conta da coleção config
       const autor = content.substring(0, knife).trim().split(',')[0];
       const data = content.substring(content.indexOf(',') + 2, knife).trim();
       const newcontent = content.substring(knife + 2);
@@ -79,8 +79,9 @@ async function commands(client, message, collection) {
         autor: autor,
         data: data,
       }
+      await db.collection('config_database').updateOne({}, { $inc: { [collection]: 1 } })
       const result = await db.collection(collection).insertOne(quote);
-      client.sendText(message.from, `✔️ Quote salva com id ${result.insertedId}"`)
+      client.sendText(message.from, `✔️ Quote salva (id: ${result.insertedId})`)
       break;
 
     // Apaga quotes por meio do id
