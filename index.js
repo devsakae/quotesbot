@@ -71,7 +71,6 @@ async function commands(client, message, collection) {
 
     // Adiciona uma quote nova na coleção do grupo
     case '!addquote':
-      if (message.author !== process.env.BOT_OWNER) return;
       // Adiciona mais 1 na conta da coleção config
       await db.collection('config_database').updateOne({}, { $inc: { [collection]: 1 } })
       const knife = content.indexOf(':');
