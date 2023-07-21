@@ -21,47 +21,62 @@ create({
   .then((client) => start(client))
   .catch((erro) => console.log(erro))
 
-async function start(client) { client.onAnyMessage((message) => commands(client, message)); }
+async function start(client) {
+  client.onAnyMessage((message) => {
+    if (message.body.startsWith('!')) {
+      if (message.groupInfo.id === process.env.GROUP_1_ID) return commands(client, message, process.env.GROUP_1_NAME);
+      if (message.groupInfo.id === process.env.GROUP_2_ID) return commands(client, message, process.env.GROUP_2_NAME);
+      if (message.groupInfo.id === process.env.GROUP_3_ID) return commands(client, message, process.env.GROUP_3_NAME);
+    }
+    return;
+  });
+}
 
-async function commands(client, message) {
-  let collection;
+async function commands(client, message, collection) {
+  // Verifica se é pedido de quote aleatória e entrega
+  if (message.body === '!quote') {
+    const allquotes = await db.collection(collection).find({}).toArray();
+    const randomNum = Math.floor(Math.random() * allquotes.length);
+    return client.sendText(message.from, `"${allquotes[randomNum].quote}" (${allquotes[randomNum].autor}, ${allquotes[randomNum].data})
+        
+▪️ id: ${allquotes[randomNum]._id.toString()}
+▪️ coleção: #${collection}`)
+  }
+
+  // Não é aleatória? Bora ver o que é
   const firstWord = message.body.substring(0, message.body.indexOf(' ')).toLowerCase();
   const content = message.body.substring(message.body.indexOf(' ')).trim();
-  
-  // Tem mais grupos? Adiciona mais linhas!
-  if (message.groupInfo.id === process.env.GROUP_1_ID) collection = process.env.GROUP_1_NAME;
-  if (message.groupInfo.id === process.env.GROUP_2_ID) collection = process.env.GROUP_2_NAME;
-  console.log('content ->', content, '<- deu algo?')
 
   // Switch/case para verificar !quote, !addquote e !delquote
   switch (firstWord) {
     case '!quote':
-      if (!content) {
-        // const randomQuote = await db.collection(collection).aggregate([{ $sample: { size: 1 } }]);
-        // console.log(randomQuote);
-        client.sendText(message.from, `"${randomQuote.quote}" (${randomQuote.autor}, ${randomQuote.data})
-      
-Tenho ${foundquote.length} quotes guardadas, essa aqui supera T-O-D-A-S 😜`)
-      }
+      // Busca na database
       const foundquote = await db.collection(collection).find({ $or: [{ quote: { $regex: content, $options: 'i' } }, { autor: { $regex: content, $options: 'i' } }] }).toArray();
+
+      // Não achou nada
       if (foundquote.length === 0) return client.sendText(message.from, 'Não achei nada, dotô 😫');
+
+      // Achou mais de 1
       if (foundquote.length > 1) {
         client.sendText(message.from, `Encontrei ${foundquote.length} quotes buscando por _${content}_`)
-        if (foundquote.length > 3) {
+        // Achou mais de 3
+        if (foundquote.length > 5) {
           client.sendText(message.from, 'Refina sua pesquisa porque eu não vou me dar ao luxo de fazer o papel que cabe à tua memória')
           break;
         }
       }
+      // Devolve uma quote (a única, ou aleatória se houverem 5)
       client.sendText(message.from, `"${foundquote[Math.floor(Math.random() * foundquote.length)].quote}" (${foundquote[0].autor}, ${foundquote[0].data})
       
-▪️ id: ${foundquote._id}
+▪️ id: ${foundquote[0]._id.toString()}
 ▪️ coleção: #${collection}`)
       break;
 
-    // !addquote Rodrigo Sakae, 2023: Estou criando um bot novo de quote no whatsapp.
+    // Adiciona uma quote nova na coleção do grupo
     case '!addquote':
       if (message.author !== process.env.BOT_OWNER) return;
-      await db.collection('config_database').updateOne({ $inc: { [collection]: 1 } })
+      // Adiciona mais 1 na conta da coleção config
+      await db.collection('config_database').updateOne({}, { $inc: { [collection]: 1 } })
       const knife = content.indexOf(':');
       const autor = content.substring(0, knife).trim().split(',')[0];
       const data = content.substring(content.indexOf(',') + 2, knife).trim();
@@ -84,8 +99,8 @@ ${quote.autor} disse em ${quote.data}: "${quote.quote}"
     case '!delquote':
       if (message.author !== process.env.BOT_OWNER) return;
       try {
-        await db.collection('config_database').updateOne({ $inc: { [collection]: -1 } })
         await db.collection(collection).deleteOne({ id: content })
+        await db.collection('config_database').updateOne({}, { $inc: { [collection]: -1 } })
       } catch {
         client.sendText(message.from, `Erro. Tem certeza que a quote ${content} existe?`)
       } finally {
@@ -100,11 +115,16 @@ async function run() {
   try {
     await mongoclient.connect();
     await mongoclient.db("admin").command({ ping: 1 });
-    await mongoclient.db('quotes').collection('config_database').insertOne(
+    await mongoclient.db('quotes').collection('config_database').replaceOne(
+      {},
       {
         owner: process.env.BOT_OWNER,
         [process.env.GROUP_1_NAME]: 0,
-        [process.env.GROUP_2_NAME]: 0
+        [process.env.GROUP_2_NAME]: 0,
+        [process.env.GROUP_3_NAME]: 0
+      },
+      {
+        upsert: true
       }
     )
     console.log("Conexão com MongoDB realizada. Configurações feitas.");
