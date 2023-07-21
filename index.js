@@ -54,11 +54,11 @@ async function commands(client, message, collection) {
       const foundquote = await db.collection(collection).find({ $or: [{ quote: { $regex: content, $options: 'i' } }, { autor: { $regex: content, $options: 'i' } }] }).toArray();
 
       // Não achou nada
-      if (foundquote.length === 0) return client.sendText(message.from, 'Não achei nada, dotô 😫');
+      if (foundquote.length === 0) return client.sendText(message.from, 'Tem nada disso aí aqui 😫');
 
       // Achou mais de 1
       if (foundquote.length > 1) {
-        client.sendText(message.from, `Encontrei ${foundquote.length} quotes buscando por _${content}_`)
+        client.sendText(message.from, `Essa é uma das ${foundquote.length} quotes que encontrei`)
         // Achou mais de 3
         if (foundquote.length > 5) {
           client.sendText(message.from, 'Refina sua pesquisa porque eu não vou me dar ao luxo de fazer o papel que cabe à tua memória')
@@ -84,9 +84,7 @@ async function commands(client, message, collection) {
         data: data,
       }
       const result = await db.collection(collection).insertOne(quote);
-      client.sendText(message.from, `✔️ Quote anotada! ENTROU PROS ANAIS
-
-${quote.autor} disse em ${quote.data}: "${quote.quote}"`)
+      client.sendText(message.from, `✔️ Quote salva com id ${result.insertedId}"`)
       break;
 
     // Apaga quotes por meio do id
@@ -108,20 +106,25 @@ ${quote.autor} disse em ${quote.data}: "${quote.quote}"`)
 async function run() {
   try {
     await mongoclient.connect();
-    await mongoclient.db("admin").command({ ping: 1 });
+    await mongoclient.db("admin").command({ ping: 1 }).then((response) => {
+      if (response) console.log('MongoDB: Conexão realizada, aguarde...')
+    });
+    const totalquotesgroup1 = await mongoclient.db('quotes').collection(process.env.GROUP_1_NAME).countDocuments() || 0;
+    const totalquotesgroup2 = await mongoclient.db('quotes').collection(process.env.GROUP_2_NAME).countDocuments() || 0;
+    const totalquotesgroup3 = await mongoclient.db('quotes').collection(process.env.GROUP_3_NAME).countDocuments() || 0;
     await mongoclient.db('quotes').collection('config_database').replaceOne(
       {},
       {
         owner: process.env.BOT_OWNER,
-        [process.env.GROUP_1_NAME]: 0,
-        [process.env.GROUP_2_NAME]: 0,
-        [process.env.GROUP_3_NAME]: 0
+        [process.env.GROUP_1_NAME]: totalquotesgroup1,
+        [process.env.GROUP_2_NAME]: totalquotesgroup2,
+        [process.env.GROUP_3_NAME]: totalquotesgroup3,
       },
       {
         upsert: true
       }
     )
-    console.log("Conexão com MongoDB realizada. Configurações feitas.");
+    console.log("MongoDB: Configurações feitas");
   } catch (err) {
     console.error(err);
   }
