@@ -37,10 +37,7 @@ async function commands(client, message, collection) {
   if (message.body === '!quote') {
     const allquotes = await db.collection(collection).find({}).toArray();
     const randomNum = Math.floor(Math.random() * allquotes.length);
-    return client.sendText(message.from, `"${allquotes[randomNum].quote}" (${allquotes[randomNum].autor}, ${allquotes[randomNum].data})
-        
-▪️ id: ${allquotes[randomNum]._id.toString()}
-▪️ coleção: #${collection}`)
+    return client.sendText(message.from, `"${allquotes[randomNum].quote}" (${allquotes[randomNum].autor}, ${allquotes[randomNum].data})`)
   }
   
   // Não é aleatória? Bora ver o que é
