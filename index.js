@@ -42,7 +42,7 @@ async function commands(client, message, collection) {
 ▪️ id: ${allquotes[randomNum]._id.toString()}
 ▪️ coleção: #${collection}`)
   }
-
+  
   // Não é aleatória? Bora ver o que é
   const firstWord = message.body.substring(0, message.body.indexOf(' ')).toLowerCase();
   const content = message.body.substring(message.body.indexOf(' ')).trim();
@@ -66,10 +66,7 @@ async function commands(client, message, collection) {
         }
       }
       // Devolve uma quote (a única, ou aleatória se houverem 5)
-      client.sendText(message.from, `"${foundquote[Math.floor(Math.random() * foundquote.length)].quote}" (${foundquote[0].autor}, ${foundquote[0].data})
-      
-▪️ id: ${foundquote[0]._id.toString()}
-▪️ coleção: #${collection}`)
+      client.sendText(message.from, `"${foundquote[Math.floor(Math.random() * foundquote.length)].quote}" (${foundquote[0].autor}, ${foundquote[0].data})`)
       break;
 
     // Adiciona uma quote nova na coleção do grupo
@@ -89,10 +86,7 @@ async function commands(client, message, collection) {
       const result = await db.collection(collection).insertOne(quote);
       client.sendText(message.from, `✔️ Quote anotada! ENTROU PROS ANAIS
 
-${quote.autor} disse em ${quote.data}: "${quote.quote}"
-
-▪️ id: ${result.insertedId}
-▪️ coleção: #${collection}`)
+${quote.autor} disse em ${quote.data}: "${quote.quote}"`)
       break;
 
     // Apaga quotes por meio do id
