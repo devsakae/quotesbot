@@ -1,3 +1,4 @@
+** Nota: Fiz um projeto que se mostrou mais estável e usa o wwebjs.dev: https://github.com/devsakae/quotesbot-withwwebjs **
 
 # Quotes bot
 
